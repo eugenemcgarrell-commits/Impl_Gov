@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NHH Governance Platform — Stage 1 Implementation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=Lexend:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'DM Sans',system-ui,sans-serif;font-size:13px}
+:root{
+  --denim:#003D69;--cobalt:#196BAC;--azure:#4D89DB;
+  --teal:#007573;--sky:#70C3CF;--sage:#3D6B55;
+  --coral:#B84D2E;--amber:#8B6914;--grey:#DCE5EC;
+  --off:#F4F7FA;--white:#ffffff;--slate:#4A5568;
+  --green:#166534;--greenl:#DCFCE7;
+  --coralL:#FEF0EA;--amberL:#FDF8EC;--sageL:#EAF2EC;
+}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:4px}
+::-webkit-scrollbar-track{background:transparent}
+input[type=range]{height:6px;width:100%;cursor:pointer}
+input,textarea,select{font-family:inherit}
+button{font-family:inherit;cursor:pointer}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp 0.2s ease both}
+
+/* Layout shells */
+#app{display:flex;flex-direction:column;height:100vh;background:var(--off);color:var(--denim)}
+#topbar{height:52px;background:var(--denim);display:flex;align-items:center;padding:0 20px;gap:16px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+#body{flex:1;display:flex;overflow:hidden}
+#sidenav{width:216px;background:var(--white);border-right:1px solid var(--grey);display:flex;flex-direction:column;flex-shrink:0;box-shadow:2px 0 6px rgba(0,0,0,.04);transition:width .2s}
+#sidenav.hidden{display:none}
+#main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+
+/* Nav */
+.nav-section{padding:14px 16px;border-bottom:1px solid var(--grey)}
+.nav-label{font-size:10px;font-weight:700;color:var(--slate);letter-spacing:1.5px;margin-bottom:10px}
+.nav-btn{width:100%;text-align:left;padding:9px 12px;border-radius:5px;border:none;background:transparent;color:var(--denim);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s;margin-bottom:2px}
+.nav-btn:hover{background:var(--off)}
+.nav-btn.active{background:var(--denim);color:var(--white)}
+.nav-badge{background:var(--coral);color:var(--white);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:auto}
+.proto-item{padding:7px 10px;border-radius:4px;margin-bottom:3px;background:var(--off)}
+.proto-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+
+/* Section header */
+.sec-header{display:flex;align-items:center;justify-content:space-between;padding:18px 28px 14px;border-bottom:1px solid var(--grey);background:var(--white);flex-shrink:0}
+.sec-header-left{display:flex;align-items:center;gap:12px}
+.sec-title{font-size:17px;font-weight:800;color:var(--denim);letter-spacing:-.3px;font-family:'Lexend',sans-serif}
+.sec-sub{font-size:12px;color:var(--slate);margin-top:2px}
+.sec-actions{display:flex;gap:8px;align-items:center}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:4px;font-size:13px;font-weight:700;border:none;cursor:pointer;transition:opacity .15s;text-decoration:none}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-sm{padding:5px 11px;font-size:11px}
+.btn-primary{background:var(--denim);color:var(--white)}
+.btn-teal{background:var(--teal);color:var(--white)}
+.btn-cobalt{background:var(--cobalt);color:var(--white)}
+.btn-ghost{background:var(--white);color:var(--cobalt);border:1.5px solid var(--grey)}
+.btn-danger{background:var(--coral);color:var(--white)}
+
+/* Cards */
+.card{background:var(--white);border-radius:6px;border:1px solid var(--grey);box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden}
+.card-hd{padding:12px 16px;border-bottom:1px solid var(--grey);font-weight:700;font-size:12px;color:var(--denim)}
+.card-bd{padding:12px 16px}
+
+/* Badges / status */
+.badge{display:inline-flex;align-items:center;font-weight:600;padding:2px 8px;border-radius:3px;letter-spacing:.3px}
+.status-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+
+/* Forms */
+.field{margin-bottom:14px}
+.field-label{font-size:11px;font-weight:700;color:var(--slate);display:block;margin-bottom:3px}
+.field-help{font-size:11px;color:var(--slate);margin-bottom:5px;opacity:.8}
+.inp{width:100%;padding:8px 12px;border:1.5px solid var(--grey);border-radius:4px;font-size:13px;color:var(--denim);background:var(--white);outline:none}
+.inp:focus{border-color:var(--cobalt)}
+textarea.inp{resize:vertical;line-height:1.55}
+select.inp{cursor:pointer}
+
+/* KPI strip */
+.kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--grey);border-bottom:1px solid var(--grey);flex-shrink:0}
+.kpi-cell{background:var(--white);padding:14px 20px;text-align:center}
+.kpi-val{font-size:26px;font-weight:900;line-height:1;font-family:'Lexend',sans-serif}
+.kpi-lbl{font-size:11px;color:var(--slate);margin-top:4px;font-weight:500}
+
+/* Score bar */
+.score-bar-wrap{display:flex;align-items:center;gap:8px}
+.score-bar-track{flex:1;height:6px;background:var(--grey);border-radius:3px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.score-bar-val{font-size:11px;font-weight:700;min-width:32px;text-align:right}
+
+/* Entry card */
+.entry-card{padding:14px 16px;margin-bottom:10px;background:var(--white);border-radius:0 6px 6px 0;border:1px solid var(--grey)}
+
+/* Modal overlay */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal-box{background:var(--white);border-radius:8px;width:600px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-hd{background:var(--denim);padding:20px 24px;border-radius:8px 8px 0 0}
+.modal-title{font-family:'Lexend',sans-serif;font-size:16px;font-weight:800;color:var(--white)}
+.modal-sub{font-size:12px;color:var(--sky);margin-top:4px}
+.modal-bd{padding:24px}
+
+/* Phase grid */
+.phase-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.phase-box{padding:12px;border-radius:5px;text-align:center}
+.phase-num{font-size:11px;font-weight:700}
+.phase-lbl{font-size:10px;margin-top:3px}
+
+/* View tabs */
+.view-tabs{display:flex;gap:6px}
+.view-tab{padding:6px 14px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--grey);background:var(--white);color:var(--slate)}
+.view-tab.active{background:var(--denim);color:var(--white);border-color:var(--denim)}
+
+/* RC nav */
+#rc-nav{width:224px;border-right:1px solid var(--grey);background:var(--off);overflow-y:auto;flex-shrink:0}
+.rc-nav-btn{width:100%;text-align:left;padding:10px 16px;border:none;border-bottom:1px solid var(--grey);background:transparent;color:var(--denim);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .15s}
+.rc-nav-btn:hover{background:var(--grey)}
+.rc-nav-btn.active{background:var(--denim);color:var(--white)}
+.rc-nav-num{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;background:var(--grey);color:var(--slate);flex-shrink:0}
+.rc-nav-btn.active .rc-nav-num{background:rgba(255,255,255,.2);color:var(--white)}
+.rc-nav-btn.done .rc-nav-num{background:var(--greenl);color:var(--green)}
+
+/* Heatmap table */
+.heatmap-table{width:100%;border-collapse:collapse;font-size:12px}
+.heatmap-table th{padding:8px 12px;font-weight:700;font-size:11px;background:var(--off);color:var(--slate);white-space:nowrap}
+.heatmap-table td{padding:10px 12px}
+.heat-cell{font-weight:700;padding:2px 8px;border-radius:3px;font-size:12px}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 40px;text-align:center;color:var(--slate)}
+.empty-icon{font-size:40px;margin-bottom:16px;opacity:.5}
+.empty-title{font-size:16px;font-weight:700;color:var(--denim);margin-bottom:8px;font-family:'Lexend',sans-serif}
+.empty-body{font-size:13px;line-height:1.65;max-width:380px;margin-bottom:20px}
+
+/* Proctor bar with threshold */
+.proctor-bar-wrap{position:relative;height:10px;flex:1}
+.proctor-track{height:100%;background:var(--grey);border-radius:4px;overflow:hidden}
+.proctor-fill{height:100%;transition:width .3s}
+.proctor-thresh{position:absolute;top:0;bottom:0;width:2px;background:var(--amber);border-radius:1px}
+
+/* Scrollable content areas */
+.scroll-area{overflow-y:auto;flex:1}
+
+/* SOP callout */
+.sop-box{background:var(--sageL);border:1px solid var(--sage);border-radius:5px;padding:10px 12px;font-size:11px}
+.sop-title{font-weight:700;color:var(--sage);margin-bottom:3px}
+.sop-body{color:var(--slate);line-height:1.45}
+
+/* Alert cards */
+.alert-card{background:var(--white);border:1.5px solid var(--coral);border-left:4px solid var(--coral);border-radius:6px;padding:16px 20px;margin-bottom:12px}
+
+/* Rec buttons */
+.rec-btn{flex:1;padding:14px;border-radius:6px;cursor:pointer;font-weight:700;font-size:14px;transition:all .2s;border:2px solid var(--grey);background:var(--white);color:var(--slate)}
+
+/* Topbar wordmark */
+.topbar-logo{width:28px;height:28px;background:var(--teal);border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:'Lexend',sans-serif;font-size:14px;font-weight:900;color:var(--white);flex-shrink:0}
+.topbar-name{font-family:'Lexend',sans-serif;font-weight:800;font-size:15px;color:var(--white)}
+.topbar-sub{font-size:11px;color:var(--sky);font-weight:500}
+.topbar-date{font-size:11px;color:rgba(255,255,255,.45)}
+.topbar-avatar{width:28px;height:28px;border-radius:50%;background:var(--cobalt);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--white)}
+
+/* Detail grid */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.detail-cell{background:var(--off);padding:10px 14px;border-radius:4px}
+.detail-cell-lbl{font-size:11px;font-weight:700;color:var(--slate);margin-bottom:2px}
+.detail-cell-val{font-size:13px;color:var(--denim);font-weight:600}
+
+/* ERIC item */
+.eric-item{padding:12px 14px;border-radius:5px;margin-bottom:8px;border:1px solid var(--grey);background:var(--white)}
+.eric-item.active-eric{background:var(--off);border-color:var(--sage)}
+
+/* Prototype cards grid */
+.proto-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px}
+.proto-card{background:var(--white);border-radius:6px;border:1px solid var(--grey);box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;cursor:pointer;transition:box-shadow .2s;user-select:none}
+.proto-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.proto-card-hd{padding:14px 16px;border-bottom:1px solid var(--grey)}
+.proto-card-bd{padding:12px 16px}
+.proto-card-name{font-weight:800;color:var(--denim);font-size:13px;margin-bottom:2px}
+.proto-card-meta{font-size:11px;color:var(--slate)}
+
+/* New entry form */
+.entry-form{padding:20px 28px;background:#EEF9F8;border-bottom:1px solid var(--sky);flex-shrink:0}
+.entry-form-title{font-weight:700;color:var(--teal);margin-bottom:14px;font-size:12px;letter-spacing:1px}
+.entry-form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+
+/* Filter bar */
+.filter-bar{display:flex;gap:8px;padding:10px 28px;border-bottom:1px solid var(--grey);background:var(--off);align-items:center;flex-wrap:wrap;flex-shrink:0}
+.fw-filter{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--grey);background:var(--white);color:var(--slate)}
+.fw-filter.active{border:none;color:var(--white)}
+
+/* Portfolio detail */
+.detail-layout{display:grid;grid-template-columns:2fr 1fr;gap:20px}
+
+/* RC content */
+.rc-body{flex:1;display:flex;overflow:hidden}
+.rc-content{flex:1;overflow-y:auto;padding:24px 28px}
+.rc-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.rc-section-super{font-size:11px;font-weight:700;color:var(--slate);letter-spacing:1px}
+.rc-section-title{font-size:17px;font-weight:800;color:var(--denim);margin-top:2px;font-family:'Lexend',sans-serif}
+
+/* Completion bar */
+.comp-bar-wrap{padding:12px 16px;border-bottom:1px solid var(--grey)}
+.comp-bar-track{height:5px;background:var(--grey);border-radius:3px;overflow:hidden;margin:6px 0 4px}
+.comp-bar-fill{height:100%;background:var(--teal);border-radius:3px;transition:width .4s}
+.comp-bar-lbl{font-size:11px;color:var(--teal);font-weight:700}
+
+/* Modal form grid */
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px}
+
+/* Phase picker */
+.phase-picker{display:flex;gap:8px;flex-wrap:wrap}
+.phase-pick-btn{width:36px;height:36px;border-radius:5px;font-weight:700;font-size:13px;cursor:pointer;border:1.5px solid var(--grey);background:var(--white);color:var(--denim)}
+.phase-pick-btn.active{background:var(--cobalt);color:var(--white);border-color:var(--cobalt)}
+
+/* Slider row */
+.slider-row{display:grid;grid-template-columns:200px 1fr 80px;gap:12px;align-items:center;margin-bottom:10px}
+.slider-val{font-size:12px;font-weight:700;text-align:right}
+
+/* Section divider label */
+.section-divider{font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;margin-top:20px}
+
+/* Signoff readiness banner */
+.signoff-banner{border-radius:5px;padding:12px 16px;margin-bottom:20px;font-size:12px;font-weight:600}
+
+/* No scroll on main scroll area but yes on individual panes */
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ─── Constants ────────────────────────────────────────────────────────────────
+const FRAMEWORKS   = ["ABCD","CFIR","ERIC","Proctor","NSW TZS"];
+const FW_COL = { ABCD:"#007573", CFIR:"#196BAC", ERIC:"#3D6B55", Proctor:"#003D69", "NSW TZS":"#B84D2E" };
+const STATUS_OPTS  = ["Pre-launch","On track","At risk","Blocked"];
+const LGA_OPTS     = ["Hornsby","Hunter's Hill","Ku-ring-gai","Lane Cove","Mosman","North Sydney","Northern Beaches","Ryde","Willoughby","Other"];
+const STATUS_STYLE = {
+  "On track":  { bg:"#DCFCE7", text:"#166534", dot:"#166534" },
+  "At risk":   { bg:"#FDF8EC", text:"#8B6914", dot:"#8B6914" },
+  "Blocked":   { bg:"#FEF0EA", text:"#B84D2E", dot:"#B84D2E" },
+  "Pre-launch":{ bg:"#EEF4FA", text:"#196BAC", dot:"#196BAC" },
+};
+const RC_SECTIONS = [
+  {n:"1",  title:"Prototype details",        key:"details"},
+  {n:"2",  title:"Phase progress",           key:"phases"},
+  {n:"3",  title:"Framework summary",        key:"frameworks"},
+  {n:"4",  title:"CFIR domain ratings",      key:"cfir"},
+  {n:"5",  title:"Proctor outcomes",         key:"proctor"},
+  {n:"6",  title:"NSW TZS — 5 priorities",   key:"tzs"},
+  {n:"7",  title:"ERIC strategy review",     key:"eric"},
+  {n:"8",  title:"ABCD asset progress",      key:"abcd"},
+  {n:"9",  title:"Commissioner narrative",   key:"narrative"},
+  {n:"10", title:"Decisions and next steps", key:"decisions"},
+  {n:"11", title:"Sign-off",                 key:"signoff"},
+];
+const CFIR_DOMAINS = ["I: The innovation","II: Outer setting","III: Inner setting","IV: People involved","V: Implementation process"];
+const PROCTOR_OUTCOMES = ["Acceptability","Adoption","Appropriateness","Feasibility","Fidelity","Penetration","Sustainability"];
+const PROCTOR_THRESH   = [80,60,90,80,80,60,50];
+const TZS_PRIORITIES = ["1. Leadership and culture","2. Competent workforce","3. Pathways to support","4. Aftercare and postvention","5. Community resilience"];
+const ABCD_ASSETS    = ["People (skills and gifts)","Associations and groups","Local institutions","Physical spaces","Economic assets"];
+const ERIC_STRATEGIES= ["Train and educate stakeholders","Develop educational materials","Audit and provide feedback","Identify and prepare champions","Facilitate relay of clinical innovation"];
+
+// ─── State ────────────────────────────────────────────────────────────────────
+const S = {
+  module: "dashboard",          // dashboard | logbook | reportcard
+  navOpen: true,
+  // Dashboard
+  dashView: "portfolio",        // portfolio | heatmap | alerts
+  dashSelected: null,           // prototype id or null
+  // Modal
+  modal: null,                  // null | "add" | {prototype object}
+  modalForm: {},
+  // Log book
+  lbShowForm: false,
+  lbFilterFW: "All",
+  lbFilterP:  "All",
+  lbSearch:   "",
+  lbForm: { date: today(), framework:"CFIR", title:"", body:"", prototype:"" },
+  // Report Card
+  rcProtoId: "",
+  rcSection: 0,
+  rcCompleted: {},              // {idx: true}
+  rcData: {},                   // {sectionKey: {fieldKey: value}}
+  // Persistent
+  prototypes: [],
+  entries: [],
+};
+
+function today(){ return new Date().toISOString().slice(0,10); }
+function uid(){ return Math.random().toString(36).slice(2,10); }
+function fmtDate(d){ if(!d) return ""; return new Date(d).toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}); }
+function scoreColor(v){ return v>=4?"#166534":v>=3?"#8B6914":"#B84D2E"; }
+function pctColor(v){ return v>=70?"#166534":v>=50?"#8B6914":"#B84D2E"; }
+function valColor(v,max){ return pctColor((v/max)*100); }
+function esc(s){ if(s==null) return ""; return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+// ─── Persistence ──────────────────────────────────────────────────────────────
+function save(){
+  try { localStorage.setItem("nhh_protos", JSON.stringify(S.prototypes));
+        localStorage.setItem("nhh_entries", JSON.stringify(S.entries)); } catch(e){}
+}
+function load(){
+  try { S.prototypes = JSON.parse(localStorage.getItem("nhh_protos")||"[]");
+        S.entries    = JSON.parse(localStorage.getItem("nhh_entries")||"[]"); } catch(e){}
+}
+
+// ─── HTML builders ────────────────────────────────────────────────────────────
+function badge(label,color,size=12){
+  return `<span class="badge" style="background:${color}18;color:${color};font-size:${size}px">${esc(label)}</span>`;
+}
+function statusPill(status){
+  const s = STATUS_STYLE[status]||STATUS_STYLE["Pre-launch"];
+  return `<span class="status-pill" style="background:${s.bg};color:${s.text}">
+    <span class="proto-dot" style="background:${s.dot}"></span>${esc(status)}</span>`;
+}
+function btn(label,cls,action,extra="",size=""){
+  return `<button class="btn ${cls} ${size?'btn-'+size:''}" data-action="${action}" ${extra}>${label}</button>`;
+}
+function scoreBar(val,max,color){
+  const pct = Math.max(0,Math.min(1,val/max))*100;
+  const col = color||valColor(val,max);
+  const disp = max===100?`${Math.round(val)}%`:(val?(+val).toFixed(1):"—");
+  return `<div class="score-bar-wrap">
+    <div class="score-bar-track"><div class="score-bar-fill" style="width:${pct}%;background:${col}"></div></div>
+    <span class="score-bar-val" style="color:${col}">${disp}</span>
+  </div>`;
+}
+function fieldWrap(label,help,inner){
+  return `<div class="field">
+    <label class="field-label">${esc(label)}</label>
+    ${help?`<div class="field-help">${esc(help)}</div>`:""}
+    ${inner}
+  </div>`;
+}
+function inp(val,action,placeholder="",type="text",extra=""){
+  return `<input class="inp" type="${type}" value="${esc(val)}" placeholder="${esc(placeholder)}" data-action="${action}" ${extra}>`;
+}
+function ta(val,action,placeholder="",rows=3){
+  return `<textarea class="inp" rows="${rows}" placeholder="${esc(placeholder)}" data-action="${action}">${esc(val)}</textarea>`;
+}
+function sel(val,action,options,placeholder=""){
+  let opts = placeholder ? `<option value="">${esc(placeholder)}</option>` : "";
+  options.forEach(o => { opts += `<option value="${esc(o)}" ${val===o?"selected":""}>${esc(o)}</option>`; });
+  return `<select class="inp" data-action="${action}">${opts}</select>`;
+}
+function emptyState(icon,title,body,action=""){
+  return `<div class="empty-state">
+    <div class="empty-icon">${icon}</div>
+    <div class="empty-title">${esc(title)}</div>
+    <div class="empty-body">${esc(body)}</div>
+    ${action}
+  </div>`;
+}
+
+// ─── TOPBAR ───────────────────────────────────────────────────────────────────
+function renderTopbar(){
+  const totalAlerts = S.prototypes.reduce((s,p)=>s+(p.alerts||0),0);
+  const dateStr = new Date().toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  const alertBadge = totalAlerts>0
+    ? `<span style="background:#B84D2E;color:#fff;font-size:11px;font-weight:700;padding:2px 9px;border-radius:12px">⚠ ${totalAlerts} alert${totalAlerts>1?"s":""}</span>` : "";
+  return `
+    <button data-action="toggle-nav" style="background:none;border:none;color:rgba(255,255,255,.55);font-size:17px;cursor:pointer;padding:4px 6px;line-height:1">☰</button>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="topbar-logo">N</div>
+      <span class="topbar-name">NHH Governance</span>
+      <span class="topbar-sub">Stage 1 Implementation Platform</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:16px">
+      <span class="topbar-date">${dateStr}</span>
+      ${alertBadge}
+      <div class="topbar-avatar">CM</div>
+    </div>`;
+}
+
+// ─── SIDENAV ──────────────────────────────────────────────────────────────────
+function renderSidenav(){
+  const totalAlerts = S.prototypes.reduce((s,p)=>s+(p.alerts||0),0);
+  const navItems = [
+    {id:"dashboard",  label:"Executive Dashboard", icon:"📊", badge:totalAlerts>0?totalAlerts:0},
+    {id:"logbook",    label:"Log Book",            icon:"📓", badge:0},
+    {id:"reportcard", label:"Report Card",         icon:"📋", badge:0},
+  ];
+
+  let navBtns = navItems.map(item => {
+    const badgeHtml = item.badge>0 ? `<span class="nav-badge">${item.badge}</span>` : "";
+    return `<button class="nav-btn ${S.module===item.id?"active":""}" data-action="nav-${item.id}">
+      <span style="font-size:16px">${item.icon}</span>
+      <span style="flex:1">${item.label}</span>
+      ${badgeHtml}
+    </button>`;
+  }).join("");
+
+  let protoList = S.prototypes.length === 0
+    ? `<div style="font-size:11px;color:var(--slate);font-style:italic;line-height:1.5">
+        No prototypes registered yet.
+        <button data-action="open-add-modal" style="background:none;border:none;color:var(--teal);font-size:11px;font-weight:700;cursor:pointer;padding:0;display:block;margin-top:6px">+ Register first prototype</button>
+      </div>`
+    : S.prototypes.map(p => {
+        const s = STATUS_STYLE[p.status]||STATUS_STYLE["Pre-launch"];
+        return `<div class="proto-item">
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="proto-dot" style="background:${s.dot}"></span>
+            <span style="font-size:11px;color:var(--denim);font-weight:600;line-height:1.3">${esc(p.name)}</span>
+          </div>
+          <div style="font-size:10px;color:var(--slate);margin-top:2px;padding-left:13px">Phase ${p.phase} · ${esc(p.lga)}</div>
+        </div>`;
+      }).join("");
+
+  return `
+    <div class="nav-section">
+      <div class="nav-label">MODULES</div>
+      ${navBtns}
+    </div>
+    <div class="nav-section" style="flex:1;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="nav-label" style="margin-bottom:0">PROTOTYPES</div>
+        <button data-action="open-add-modal" style="background:none;border:1px solid var(--grey);border-radius:3px;color:var(--teal);font-size:11px;font-weight:700;cursor:pointer;padding:2px 7px">+</button>
+      </div>
+      ${protoList}
+    </div>
+    <div style="padding:14px 16px">
+      <div class="sop-box">
+        <div class="sop-title">SOP-COMM-001 v1.0</div>
+        <div class="sop-body">All entries must be made within 24 hours of the activity.</div>
+      </div>
+    </div>`;
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function renderDashboard(){
+  const protos = S.prototypes;
+  const totalAlerts = protos.reduce((s,p)=>s+(p.alerts||0),0);
+  const onTrack  = protos.filter(p=>p.status==="On track").length;
+  const atRisk   = protos.filter(p=>p.status==="At risk").length;
+  const blocked  = protos.filter(p=>p.status==="Blocked").length;
+
+  const viewBtns = ["portfolio","heatmap","alerts"].map(v =>
+    `<button class="view-tab ${S.dashView===v?"active":""}" data-action="dash-view-${v}">${v.charAt(0).toUpperCase()+v.slice(1)}</button>`
+  ).join("");
+
+  const header = `<div class="sec-header">
+    <div class="sec-header-left">
+      <span style="font-size:20px">📊</span>
+      <div>
+        <div class="sec-title">Executive Dashboard</div>
+        <div class="sec-sub">Live portfolio view — auto-calculated from the Implementation Tracker</div>
+      </div>
+    </div>
+    <div class="sec-actions">
+      <div class="view-tabs">${viewBtns}</div>
+      ${btn("+ Add prototype","btn-teal","open-add-modal")}
+    </div>
+  </div>`;
+
+  const kpi = protos.length > 0 ? `<div class="kpi-strip">
+    ${[["Total prototypes",protos.length,"#003D69"],["On track",onTrack,"#166534"],["At risk",atRisk,"#8B6914"],
+       ["Blocked",blocked,"#B84D2E"],["Critical alerts",totalAlerts,totalAlerts>0?"#B84D2E":"#166534"]
+    ].map(([l,v,c])=>`<div class="kpi-cell"><div class="kpi-val" style="color:${c}">${v}</div><div class="kpi-lbl">${l}</div></div>`).join("")}
+  </div>` : "";
+
+  let content = "";
+
+  if(protos.length === 0){
+    content = emptyState("📊","No prototypes registered yet",
+      "Register your first prototype to begin tracking implementation progress. Each prototype has its own Log Book, Report Card, and dashboard row.",
+      btn("+ Register first prototype","btn-teal","open-add-modal"));
+  } else if(S.dashView === "portfolio" && !S.dashSelected){
+    content = `<div class="proto-grid">` + protos.map(p => {
+      const hasData = p.cfir>0||p.proctor>0;
+      const fwBars = !hasData
+        ? `<div style="font-size:11px;color:var(--slate);font-style:italic;text-align:center;padding:8px 0">No framework data yet — update from the Implementation Workbook.</div>`
+        : [["CFIR",p.cfir,5,FW_COL.CFIR],["Proctor",p.proctor,100,FW_COL.Proctor],["NSW TZS",p.tzs,5,FW_COL["NSW TZS"]]].map(([fw,val,max,col]) =>
+            `<div style="display:grid;grid-template-columns:60px 1fr;gap:10px;align-items:center;margin-bottom:7px">
+              <span style="font-size:10px;font-weight:700;color:${FW_COL[fw]}">${fw}</span>
+              ${scoreBar(val,max,col)}
+            </div>`
+          ).join("");
+      const alertBadge = p.alerts>0
+        ? `<span style="background:var(--coralL);color:var(--coral);font-size:11px;font-weight:700;padding:2px 8px;border-radius:3px;display:inline-block;margin-top:4px">⚠ ${p.alerts} alert${p.alerts>1?"s":""}</span>` : "";
+      return `<div class="proto-card fade-up" data-action="dash-select-${p.id}">
+        <div class="proto-card-hd">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+            <div style="flex:1;padding-right:10px">
+              <div class="proto-card-name">${esc(p.name)}</div>
+              <div class="proto-card-meta">${esc(p.lga)} · Phase ${p.phase}/8</div>
+            </div>
+            ${statusPill(p.status)}
+          </div>
+          ${alertBadge}
+        </div>
+        <div class="proto-card-bd">${fwBars}</div>
+      </div>`;
+    }).join("") + `</div>`;
+
+  } else if(S.dashView === "portfolio" && S.dashSelected){
+    const p = protos.find(x=>x.id===S.dashSelected);
+    if(!p){ S.dashSelected=null; return renderDashboard(); }
+    const protoEntries = S.entries.filter(e=>e.prototype===p.id);
+    const fwDetail = p.cfir===0&&p.proctor===0
+      ? `<div style="color:var(--slate);font-size:12px;font-style:italic;text-align:center;padding:12px 0">Framework data not yet entered. Update the Implementation Workbook to populate this view.</div>`
+      : [["CFIR average",p.cfir,5,"#196BAC"],["Proctor average",p.proctor,100,"#003D69"],
+         ["NSW TZS average",p.tzs,5,"#B84D2E"],["ABCD average",p.abcd,5,"#007573"],
+         ["ERIC completion",p.eric,100,"#3D6B55"]].map(([label,val,max,col]) =>
+          `<div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+              <span style="font-size:12px;color:var(--denim);font-weight:600">${label}</span>
+            </div>
+            ${scoreBar(val,max,col)}
+          </div>`
+        ).join("");
+
+    const phases = Array.from({length:8},(_,i)=>i+1).map(ph => {
+      const isDone=ph<p.phase, isActive=ph===p.phase;
+      const bg=isDone?"#166534":isActive?"#196BAC":"#DCE5EC";
+      const icon=isDone?"✓":isActive?"●":"";
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">
+        <div style="width:18px;height:18px;border-radius:3px;background:${bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:${isDone?9:8}px;color:#fff">${icon}</div>
+        <span style="font-size:11px;color:${ph<=p.phase?"var(--denim)":"var(--slate)"};font-weight:${isActive?700:400}">Phase ${ph}</span>
+        ${isActive?`<span style="font-size:9px;color:var(--cobalt);font-weight:700">← current</span>`:""}
+      </div>`;
+    }).join("");
+
+    const entryList = protoEntries.length===0
+      ? `<div style="font-size:11px;color:var(--slate);padding:16px 0;font-style:italic">No log entries yet for this prototype.</div>`
+      : protoEntries.slice(0,5).map(e =>
+          `<div style="padding:10px 0;border-bottom:1px solid var(--grey)">
+            <div style="display:flex;gap:6px;margin-bottom:3px">
+              ${badge(e.framework,FW_COL[e.framework]||"#003D69",10)}
+              <span style="font-size:10px;color:var(--slate)">${fmtDate(e.date)}</span>
+            </div>
+            <div style="font-size:11px;color:var(--denim);font-weight:600">${esc(e.title)}</div>
+          </div>`
+        ).join("");
+
+    content = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+        <button data-action="dash-back" style="background:none;border:none;color:var(--cobalt);font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px">← Back to portfolio</button>
+        ${btn("Edit prototype","btn-ghost btn-sm","open-edit-modal-"+p.id)}
+      </div>
+      <div class="detail-layout">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div style="padding:14px 20px;border-bottom:1px solid var(--grey);display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-weight:800;color:var(--denim);font-size:14px">${esc(p.name)}</div>
+                <div style="font-size:12px;color:var(--slate);margin-top:3px">${esc(p.lga)} · Phase ${p.phase}/8 · ${esc(p.leadOrg||"")}</div>
+              </div>
+              ${statusPill(p.status)}
+            </div>
+            <div style="padding:16px 20px">${fwDetail}</div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-hd">Phase progress</div>
+            <div class="card-bd">${phases}</div>
+          </div>
+          <div class="card">
+            <div class="card-hd">Recent log entries</div>
+            <div style="padding:0 16px">${entryList}</div>
+          </div>
+        </div>
+      </div>`;
+
+  } else if(S.dashView === "heatmap"){
+    if(protos.length===0){ content=emptyState("📊","No prototypes yet","Register a prototype to see the heatmap."); }
+    else {
+      const rows = protos.map((p,i) => {
+        const cells=[{v:p.cfir,max:5},{v:p.proctor,max:100},{v:p.tzs,max:5},{v:p.abcd,max:5},{v:p.eric,max:100},{v:p.phase,max:8}];
+        const cellHtml = cells.map((cell,ci) => {
+          const pct=cell.v/cell.max;
+          const bg=cell.v===0?"var(--off)":pct>=0.7?"#DCFCE7":pct>=0.5?"#FDF8EC":"#FEF0EA";
+          const col=cell.v===0?"var(--slate)":pct>=0.7?"#166534":pct>=0.5?"#8B6914":"#B84D2E";
+          const label=cell.v===0?"—":ci===5?`${cell.v}/8`:ci===1||ci===4?`${Math.round(cell.v)}%`:(+cell.v).toFixed(1);
+          return `<td style="padding:10px 12px;text-align:center"><span class="heat-cell" style="color:${col};background:${bg}">${label}</span></td>`;
+        }).join("");
+        return `<tr style="background:${i%2===0?"#fff":"var(--off)"}">
+          <td style="padding:10px 12px;font-weight:600;color:var(--denim)">${esc(p.name)}</td>
+          ${cellHtml}
+          <td style="padding:10px 12px;text-align:center">${statusPill(p.status)}</td>
+        </tr>`;
+      }).join("");
+      content = `<div style="font-weight:700;color:var(--denim);font-size:13px;margin-bottom:16px">Framework ratings heatmap — all prototypes</div>
+        <div style="overflow-x:auto">
+          <table class="heatmap-table">
+            <thead><tr>
+              ${["Prototype","CFIR /5","Proctor %","NSW TZS /5","ABCD /5","ERIC %","Phase","Status"].map((h,i)=>
+                `<th style="text-align:${i===0?"left":"center"}">${h}</th>`).join("")}
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+  } else if(S.dashView === "alerts"){
+    const flagged = protos.filter(p=>(p.alerts||0)>0||(p.cfir>0&&p.cfir<3)||(p.proctor>0&&p.proctor<50)||(p.tzs>0&&p.tzs<3));
+    if(flagged.length===0){
+      content = `<div style="text-align:center;padding:60px;color:var(--green)">
+        <div style="font-size:36px;margin-bottom:12px">✓</div>
+        <div style="font-size:15px;font-weight:700">${protos.length===0?"No prototypes registered yet.":"No active alerts — all prototypes within acceptable thresholds."}</div>
+      </div>`;
+    } else {
+      content = flagged.map(p => {
+        const flags=[
+          p.cfir>0&&p.cfir<3    && `CFIR average below 3 (${(+p.cfir).toFixed(1)})`,
+          p.proctor>0&&p.proctor<50 && `Proctor average below 50% (${p.proctor}%)`,
+          p.tzs>0&&p.tzs<3      && `TZS average below 3 (${(+p.tzs).toFixed(1)})`,
+          (p.alerts||0)>0       && `${p.alerts} active alert${p.alerts>1?"s":""}`,
+        ].filter(Boolean);
+        return `<div class="alert-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+            <div><div style="font-weight:800;color:var(--denim);font-size:13px">${esc(p.name)}</div>
+              <div style="font-size:11px;color:var(--slate)">${esc(p.lga)}</div></div>
+            ${statusPill(p.status)}
+          </div>
+          ${flags.map(f=>`<div style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px">
+            <span style="color:var(--coral);font-weight:700">⚠</span>
+            <span style="color:var(--denim)">${esc(f)}</span>
+            <span style="font-size:11px;color:var(--coral);font-weight:600;margin-left:auto">Action required</span>
+          </div>`).join("")}
+        </div>`;
+      }).join("");
+    }
+  }
+
+  return `${header}${kpi}<div class="scroll-area" style="padding:20px 24px">${content}</div>`;
+}
+
+// ─── LOG BOOK ─────────────────────────────────────────────────────────────────
+function renderLogBook(){
+  const protos  = S.prototypes;
+  const all     = S.entries;
+  const filtered = all
+    .filter(e => S.lbFilterFW==="All" || e.framework===S.lbFilterFW)
+    .filter(e => S.lbFilterP==="All"  || e.prototype===S.lbFilterP)
+    .filter(e => !S.lbSearch || e.title.toLowerCase().includes(S.lbSearch.toLowerCase()) || (e.body||"").toLowerCase().includes(S.lbSearch.toLowerCase()))
+    .sort((a,b) => b.date.localeCompare(a.date));
+
+  const header = `<div class="sec-header">
+    <div class="sec-header-left">
+      <span style="font-size:20px">📓</span>
+      <div>
+        <div class="sec-title">Commissioner Log Book</div>
+        <div class="sec-sub">${filtered.length} entr${filtered.length===1?"y":"ies"}${S.lbFilterFW!=="All"?" · "+S.lbFilterFW:""}</div>
+      </div>
+    </div>
+    <div class="sec-actions">
+      ${protos.length>0 ? btn(S.lbShowForm?"✕ Cancel":"+ New entry","btn-teal","lb-toggle-form") : ""}
+    </div>
+  </div>`;
+
+  let form = "";
+  if(S.lbShowForm && protos.length>0){
+    const protoOpts = protos.map(p=>`<option value="${p.id}" ${S.lbForm.prototype===p.id?"selected":""}>${esc(p.name)}</option>`).join("");
+    const fwOpts    = FRAMEWORKS.map(fw=>`<option ${S.lbForm.framework===fw?"selected":""}>${esc(fw)}</option>`).join("");
+    const canSave   = S.lbForm.title.trim()&&S.lbForm.body.trim()&&S.lbForm.prototype;
+    form = `<div class="entry-form">
+      <div class="entry-form-title">NEW LOG BOOK ENTRY</div>
+      <div class="entry-form-grid">
+        ${fieldWrap("Date *","",`<input class="inp" type="date" value="${S.lbForm.date}" data-action="lbf-date">`)}
+        ${fieldWrap("Framework *","",`<select class="inp" data-action="lbf-framework">${fwOpts}</select>`)}
+        ${fieldWrap("Prototype *","",`<select class="inp" data-action="lbf-prototype"><option value="">Select prototype…</option>${protoOpts}</select>`)}
+      </div>
+      ${fieldWrap("Entry title *","Brief descriptive title for this contemporaneous record.",`<input class="inp" type="text" value="${esc(S.lbForm.title)}" placeholder="e.g. Monthly Proctor check — month 3" data-action="lbf-title">`)}
+      ${fieldWrap("Entry (contemporaneous record) *","Record what happened, what was decided, and why. Include actions arising with named owner and due date.",`<textarea class="inp" rows="5" placeholder="Enter your contemporaneous record here. Be specific. Include dates, names, decisions and evidence cited." data-action="lbf-body">${esc(S.lbForm.body)}</textarea>`)}
+      <div style="display:flex;gap:10px;align-items:center">
+        ${btn("Save entry","btn-teal","lb-save",canSave?"":'disabled')}
+        ${btn("Cancel","btn-ghost","lb-cancel")}
+        ${!canSave?`<span style="font-size:11px;color:var(--coral)">All fields marked * are required.</span>`:""}
+      </div>
+    </div>`;
+  }
+
+  const showFilters = all.length>0||S.lbFilterFW!=="All"||S.lbFilterP!=="All"||S.lbSearch;
+  const fwFilterBtns = ["All",...FRAMEWORKS].map(fw => {
+    const col = fw==="All"?"var(--denim)":(FW_COL[fw]||"var(--denim)");
+    const active = S.lbFilterFW===fw;
+    return `<button class="fw-filter ${active?"active":""}" data-action="lb-fw-${fw}"
+      style="${active?`background:${col};border:none;`:""}${!active?"":""}">${fw}</button>`;
+  }).join("");
+
+  const filterBar = showFilters ? `<div class="filter-bar">
+    <input class="inp" type="text" value="${esc(S.lbSearch)}" placeholder="Search entries…" data-action="lb-search" style="width:180px;padding:5px 10px">
+    ${fwFilterBtns}
+    ${protos.length>1 ? `<select class="inp" data-action="lb-filter-proto" style="width:auto;padding:4px 10px">
+      <option value="All" ${S.lbFilterP==="All"?"selected":""}>All prototypes</option>
+      ${protos.map(p=>`<option value="${p.id}" ${S.lbFilterP===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}
+    </select>` : ""}
+  </div>` : "";
+
+  let entries = "";
+  if(protos.length===0){
+    entries = emptyState("📓","Register a prototype first","Before creating log book entries, you need to register at least one prototype team. Go to the Executive Dashboard to register your first prototype.");
+  } else if(all.length===0){
+    entries = emptyState("✏️","No log entries yet",
+      "Every commissioning action, decision, and observation must be recorded contemporaneously — within 24 hours of the activity. Your first entry should record the decision to commission this prototype.",
+      btn("+ Create first entry","btn-teal","lb-show-form"));
+  } else if(filtered.length===0){
+    entries = emptyState("🔍","No entries match your filters","Try clearing the search or filter to see all entries.");
+  } else {
+    entries = filtered.map((entry,i) => {
+      const proto = protos.find(p=>p.id===entry.prototype);
+      const fwCol = FW_COL[entry.framework]||"#003D69";
+      return `<div class="entry-card fade-up" style="border-left:3px solid ${fwCol};animation-delay:${Math.min(i,8)*0.04}s">
+        <div style="display:flex;gap:8px;margin-bottom:6px;flex-wrap:wrap;align-items:center">
+          ${badge(entry.framework,fwCol,11)}
+          ${proto?badge(proto.name,"#196BAC",11):""}
+          <span style="font-size:11px;color:var(--slate)">${fmtDate(entry.date)}</span>
+        </div>
+        <div style="font-weight:700;color:var(--denim);font-size:13px;margin-bottom:5px">${esc(entry.title)}</div>
+        <div style="font-size:12px;color:var(--slate);line-height:1.65">${esc(entry.body)}</div>
+      </div>`;
+    }).join("");
+  }
+
+  return `${header}${form}${filterBar}<div class="scroll-area" style="padding:16px 28px">${entries}</div>`;
+}
+
+// ─── REPORT CARD ─────────────────────────────────────────────────────────────
+function getSD(sectionKey, field, fallback=""){
+  return ((S.rcData[sectionKey]||{})[field]) ?? fallback;
+}
+
+function renderRCSection(idx){
+  const s   = RC_SECTIONS[idx];
+  const pid = S.rcProtoId;
+  const p   = S.prototypes.find(x=>x.id===pid);
+  if(!p) return `<div style="color:var(--slate);font-size:13px">Select a prototype to begin.</div>`;
+
+  const protoEntries = S.entries.filter(e=>e.prototype===pid);
+
+  switch(s.key){
+    case "details":{
+      const detailCells = [
+        ["Prototype name",p.name],["LGA",p.lga],
+        ["Lead organisation",p.leadOrg||"—"],["Commissioner",p.commissioner||"—"],
+        ["Start date",p.startDate?fmtDate(p.startDate):"—"],["Current phase",`Phase ${p.phase} of 8`],
+        ["LHD partner","Enter LHD partner name"],["Lead organisation","—"],
+      ];
+      return `<div class="detail-grid">
+        ${detailCells.map(([l,v])=>`<div class="detail-cell"><div class="detail-cell-lbl">${l}</div><div class="detail-cell-val">${esc(v)}</div></div>`).join("")}
+        <div style="grid-column:1/-1">
+          ${fieldWrap("Report period","",`<input class="inp" type="text" value="${esc(getSD("details","period"))}" placeholder="e.g. January – June 2026" data-action="rc-sd-details-period">`)}
+        </div>
+      </div>`;
+    }
+
+    case "phases":{
+      const phBoxes = Array.from({length:8},(_,i)=>i+1).map(ph => {
+        const isActive=ph===p.phase, isDone=ph<p.phase;
+        const bg=isActive?"#196BAC":isDone?"#DCFCE7":"var(--off)";
+        const textCol=isActive?"#fff":isDone?"#166534":"var(--slate)";
+        const sub=isDone?"✓ Complete":isActive?"● Active":"Not started";
+        const subCol=isActive?"#9DC4E8":isDone?"#166534":"#94A3B8";
+        return `<div class="phase-box" style="background:${bg};border:${isActive?"none":"1px solid var(--grey)"}">
+          <div class="phase-num" style="color:${textCol}">Phase ${ph}</div>
+          <div class="phase-lbl" style="color:${subCol}">${sub}</div>
+        </div>`;
+      }).join("");
+      return `<p style="font-size:12px;color:var(--slate);margin-bottom:14px">Phase ${p.phase} is the current active phase. Mark phases as complete or not started as needed.</p>
+        <div class="phase-grid">${phBoxes}</div>`;
+    }
+
+    case "frameworks":{
+      const rows=[
+        [p.cfir,5,"#196BAC","CFIR","Implementation readiness"],
+        [p.proctor,100,"#003D69","Proctor","Implementation quality"],
+        [p.tzs,5,"#B84D2E","NSW TZS","Suicide prevention"],
+        [p.abcd,5,"#007573","ABCD","Community assets"],
+        [p.eric,100,"#3D6B55","ERIC","Strategy completion"],
+      ].map(([val,max,col,fw]) => {
+        const pct=val/max*100;
+        const status=pct>=70?"On track":pct>=50?"Needs work":"Action needed";
+        const sc=pct>=70?"#166534":pct>=50?"#8B6914":"#B84D2E";
+        return `<div style="display:grid;grid-template-columns:90px 1fr 100px;align-items:center;gap:12px;margin-bottom:12px">
+          ${badge(fw,FW_COL[fw]||col)}
+          ${scoreBar(val,max,col)}
+          <span style="font-size:11px;font-weight:700;color:${sc}">${status}</span>
+        </div>`;
+      }).join("");
+      return `<p style="font-size:12px;color:var(--slate);margin-bottom:14px">Overall framework ratings drawn from the Implementation Workbook. Update prototype data to reflect current ratings.</p>${rows}`;
+    }
+
+    case "cfir":{
+      const rows = CFIR_DOMAINS.map((dom,i) => {
+        const val = parseFloat(getSD("cfir",`d${i}`,p.cfir||0))||0;
+        const gap = val>0&&val<3;
+        const col = val>0?scoreColor(val):"var(--grey)";
+        return `<div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <span style="font-size:12px;color:var(--denim);font-weight:600">Domain ${dom}</span>
+            ${gap?`<span style="font-size:11px;color:var(--coral);font-weight:700">⚠ Action plan required</span>`:""}
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="range" min="0" max="5" step="0.1" value="${val}" data-action="rc-sd-cfir-d${i}" style="flex:1;accent-color:${col}">
+            <span style="font-size:13px;font-weight:700;min-width:32px;color:${col}">${val>0?val.toFixed(1):"—"}</span>
+          </div>
+          ${gap?`<div style="margin-top:6px">${ta(getSD("cfir",`note${i}`),"rc-sd-cfir-note"+i,"Describe the action plan for this domain…",2)}</div>`:""}
+        </div>`;
+      }).join("");
+      return `<p style="font-size:12px;color:var(--slate);margin-bottom:14px">Rate each CFIR domain 1–5. Any domain below 3 requires a written action plan before this Report Card can be signed.</p>${rows}`;
+    }
+
+    case "proctor":{
+      const rows = PROCTOR_OUTCOMES.map((outcome,i) => {
+        const val = parseFloat(getSD("proctor",`o${i}`,p.proctor||0))||0;
+        const th  = PROCTOR_THRESH[i];
+        const col = val>0?(val>=th?"#166534":"#B84D2E"):"#DCE5EC";
+        return `<div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:12px;font-weight:600;color:var(--denim)">${outcome}</span>
+            <span style="font-size:11px;color:var(--slate)">Threshold: ${th}%</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <div class="proctor-bar-wrap">
+              <div class="proctor-track"><div class="proctor-fill" style="width:${val}%;background:${col}"></div></div>
+              <div class="proctor-thresh" style="left:${th}%"></div>
+            </div>
+            <input class="inp" type="number" min="0" max="100" value="${val||""}" placeholder="0" data-action="rc-sd-proctor-o${i}" style="width:60px;text-align:center;padding:4px 8px">
+            <span style="font-size:11px;color:var(--slate)">%</span>
+          </div>
+        </div>`;
+      }).join("");
+      return `<p style="font-size:12px;color:var(--slate);margin-bottom:14px">Enter the current value for each Proctor outcome. The vertical marker shows the default threshold.</p>${rows}`;
+    }
+
+    case "tzs":{
+      const rows = TZS_PRIORITIES.map((area,i) => {
+        const val = parseFloat(getSD("tzs",`p${i}`,p.tzs||0))||0;
+        const status=val>=4?"Met":val>=3?"Partial":val>0?"Gap":"Not rated";
+        const col={Met:"#166534",Partial:"#8B6914",Gap:"#B84D2E","Not rated":"#4A5568"}[status];
+        return `<div style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+            <span style="font-size:12px;font-weight:600;color:var(--denim)">${area}</span>
+            ${badge(status,col,11)}
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="range" min="0" max="5" step="0.1" value="${val}" data-action="rc-sd-tzs-p${i}" style="flex:1;accent-color:${col}">
+            <span style="font-size:13px;font-weight:700;min-width:32px;color:${col}">${val>0?val.toFixed(1):"—"}</span>
+          </div>
+        </div>`;
+      }).join("");
+      return `<p style="font-size:12px;color:var(--slate);margin-bottom:14px">Rate each NSW TZS priority area 1–5. Any area rated below 3 is a gap and requires a documented action plan.</p>
+        ${rows}
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--grey)">
+          ${fieldWrap("Significant events this period","",ta(getSD("tzs","events"),"rc-sd-tzs-events","Describe any significant events or incidents. Enter 'None' if no events occurred.",2))}
+          ${fieldWrap("StandBy referrals this period","",inp(getSD("tzs","standbys"),"rc-sd-tzs-standbys","Number of StandBy referrals. Enter 0 if none."))}
+        </div>`;
+    }
+
+    case "eric":{
+      const items = ERIC_STRATEGIES.map((strat,i) => {
+        const active = getSD("eric",`active${i}`,false);
+        return `<div class="eric-item ${active?"active-eric":""}">
+          <div style="display:flex;align-items:center;gap:10px;${active?"margin-bottom:10px":""}">
+            <input type="checkbox" ${active?"checked":""} data-action="rc-sd-eric-active${i}" style="accent-color:var(--sage);width:16px;height:16px;cursor:pointer">
+            <span style="font-size:12px;color:var(--denim);font-weight:${active?700:400}">${esc(strat)}</span>
+            ${active?badge("Active","#3D6B55",10):""}
+          </div>
+          ${active?`<div style="padding-left:26px">
+            ${fieldWrap("Status and outcome to date","",ta(getSD("eric",`note${i}`),"rc-sd-eric-note"+i,"Describe progress, effectiveness and any changes needed…",2))}
+          </div>`:""}
+        </div>`;
+      }).join("");
+      return `<p style="font-size:12px;color:var(--slate);margin-bottom:14px">List your active ERIC strategies and review their effectiveness. Use your Log Book entries as the evidence base.</p>
+        ${items}
+        <div style="margin-top:8px">
+          ${fieldWrap("Additional strategies not listed above","",ta(getSD("eric","other"),"rc-sd-eric-other","List any ERIC strategies not shown above…",2))}
+        </div>`;
+    }
+
+    case "abcd":{
+      const sliders = ABCD_ASSETS.map((asset,i) => {
+        const val = parseFloat(getSD("abcd",`a${i}`,p.abcd||0))||0;
+        const col = val>0?scoreColor(val):"#DCE5EC";
+        return `<div style="margin-bottom:12px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-size:12px;font-weight:600;color:var(--denim)">${asset}</span>
+            <span style="font-size:12px;font-weight:700;color:${col}">${val>0?val.toFixed(1):"Not rated"}</span>
+          </div>
+          <input type="range" min="0" max="5" step="0.1" value="${val}" data-action="rc-sd-abcd-a${i}" style="width:100%;accent-color:${col}">
+        </div>`;
+      }).join("");
+      const checks=["Community advisory group is meeting regularly",
+        "Advisory group decisions are reflected in commissioning actions",
+        "Peer worker from the community is employed in the team",
+        "Asset map has been updated this reporting period"].map((check,i) =>
+        `<label style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;cursor:pointer">
+          <input type="checkbox" ${getSD("abcd",`check${i}`,false)?"checked":""} data-action="rc-sd-abcd-check${i}" style="accent-color:var(--teal);margin-top:2px;width:16px;height:16px">
+          <span style="font-size:12px;color:var(--denim)">${esc(check)}</span>
+        </label>`).join("");
+      return `<p style="font-size:12px;color:var(--slate);margin-bottom:14px">Rate progress on each asset type 1–5 and confirm the four ABCD governance checkboxes.</p>
+        ${sliders}
+        <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--grey)">
+          <div style="font-weight:700;color:var(--teal);font-size:12px;margin-bottom:10px">ABCD governance checkboxes</div>
+          ${checks}
+        </div>`;
+    }
+
+    case "narrative":{
+      const fields=[
+        ["going","What is going well?","Describe 3–5 things that are working well in this prototype.","ABCD"],
+        ["barriers","What barriers need attention?","Describe barriers that need to be addressed before the next milestone.","CFIR"],
+        ["learning","What learning should be shared?","Describe learning that may benefit other prototype teams.","ERIC"],
+      ].map(([field,label,help,fw]) => {
+        const relevant = protoEntries.filter(e=>e.framework===fw).length;
+        return fieldWrap(label,help,ta(getSD("narrative",field),"rc-sd-narrative-"+field,
+          `Enter your narrative here… (${relevant} log entries available as evidence)`,4));
+      }).join("");
+      return `<p style="font-size:12px;color:var(--slate);margin-bottom:16px">Write 3–5 sentences for each prompt. Use your Log Book entries as the evidence base.</p>${fields}`;
+    }
+
+    case "decisions":{
+      const rec = getSD("decisions","recommendation","");
+      const recBtns=["Scale","Pivot","Close"].map(r => {
+        const col=r==="Scale"?"#166534":r==="Pivot"?"#8B6914":"#B84D2E";
+        const bg=r==="Scale"?"#DCFCE7":r==="Pivot"?"#FDF8EC":"#FEF0EA";
+        const active=rec===r;
+        const icon=r==="Scale"?"↑":r==="Pivot"?"↻":"✕";
+        const desc=r==="Scale"?"Proceed to Stage 2":r==="Pivot"?"Adjust and continue":"Close responsibly";
+        return `<button class="rec-btn" data-action="rc-rec-${r}"
+          style="background:${active?col:"#fff"};color:${active?"#fff":"var(--slate)"};border-color:${active?col:"var(--grey)"}"
+        >${icon} ${r}<div style="font-size:10px;font-weight:400;margin-top:4px;opacity:.8">${desc}</div></button>`;
+      }).join("");
+      const rationale = rec ? `
+        ${fieldWrap(`Rationale for ${rec} recommendation *`,"",ta(getSD("decisions","rationale"),"rc-sd-decisions-rationale","Write the evidence-based rationale. Reference specific framework scores, Log Book entries and the basis for this recommendation.",4))}
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px">
+          ${fieldWrap("Next steps (Owner 1)","",inp(getSD("decisions","action0"),"rc-sd-decisions-action0","Describe action and named owner"))}
+          ${fieldWrap("Next steps (Owner 2)","",inp(getSD("decisions","action1"),"rc-sd-decisions-action1","Describe action and named owner"))}
+          ${fieldWrap("Review date","",inp(getSD("decisions","action2"),"rc-sd-decisions-action2","Enter review date"))}
+        </div>` : "";
+      return `<div style="font-size:12px;color:var(--slate);margin-bottom:16px">Select your recommendation and write the evidence-based rationale.</div>
+        <div style="display:flex;gap:10px;margin-bottom:20px">${recBtns}</div>${rationale}`;
+    }
+
+    case "signoff":{
+      const completedCount = Object.values(S.rcCompleted).filter(Boolean).length;
+      const ready = completedCount >= 9;
+      const signedBy = getSD("signoff","name","");
+      const bannerCol = ready ? "#166534":"#8B6914";
+      const bannerBg  = ready ? "#DCFCE7":"#FDF8EC";
+      const bannerBd  = ready ? "#166534":"#8B6914";
+      const bannerMsg = ready
+        ? "✓ Sufficient sections completed — this Report Card is ready for sign-off."
+        : `⚠ ${11-completedCount} section(s) still require completion before sign-off.`;
+      const successBox = signedBy&&ready ? `<div style="background:#DCFCE7;border:1.5px solid #166534;border-radius:5px;padding:16px;margin-top:16px;font-size:12px">
+        <div style="font-weight:700;color:#166534;margin-bottom:4px">✓ Report Card signed by ${esc(signedBy)}</div>
+        <div style="color:#166534">${esc(p.name)} · ${fmtDate(getSD("signoff","date",today()))} · Recommendation: ${getSD("decisions","recommendation")||"Pending"}</div>
+      </div>` : "";
+      return `<div class="signoff-banner" style="background:${bannerBg};border:1px solid ${bannerBd};color:${bannerCol}">${bannerMsg}</div>
+        ${fieldWrap("Commissioner name *","Type your full name to sign this Report Card.",inp(getSD("signoff","name"),"rc-sd-signoff-name","Your full name"))}
+        ${fieldWrap("Signature date","",`<input class="inp" type="date" value="${esc(getSD("signoff","date",today()))}" data-action="rc-sd-signoff-date">`)}
+        ${fieldWrap("Endorsed by (commissioning body)","",inp(getSD("signoff","endorsedBy"),"rc-sd-signoff-endorsedBy","Name and title of the person endorsing this Report Card"))}
+        ${successBox}`;
+    }
+
+    default:{
+      const relevant=protoEntries.length;
+      return `<div style="color:var(--slate);font-size:13px;padding:12px 0">
+        Use your Log Book entries for ${esc(p.name)} as the evidence base for this section.
+        ${relevant>0?`<div style="margin-top:10px;padding:10px 14px;background:var(--off);border-radius:4px;font-size:11px;color:var(--cobalt)">${relevant} log book ${relevant===1?"entry":"entries"} available for ${esc(p.name)}.</div>`:""}
+      </div>`;
+    }
+  }
+}
+
+function renderReportCard(){
+  const protos = S.prototypes;
+  const completedCount = Object.values(S.rcCompleted).filter(Boolean).length;
+
+  const protoSelect = protos.length>0 ? `<select class="inp" data-action="rc-proto-select" style="width:auto;padding:6px 12px;cursor:pointer">
+    ${protos.map(p=>`<option value="${p.id}" ${S.rcProtoId===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}
+  </select>` : "";
+
+  const header = `<div class="sec-header">
+    <div class="sec-header-left">
+      <span style="font-size:20px">📋</span>
+      <div>
+        <div class="sec-title">Prototype Report Card</div>
+        <div class="sec-sub">11-section structured evidence statement</div>
+      </div>
+    </div>
+    <div class="sec-actions">${protoSelect}</div>
+  </div>`;
+
+  if(protos.length===0){
+    return `${header}<div class="scroll-area">${emptyState("📋","No prototypes registered","Register a prototype from the Executive Dashboard to begin completing a Report Card.")}</div>`;
+  }
+
+  // Section nav
+  const navItems = RC_SECTIONS.map((s,idx) => {
+    const done = !!S.rcCompleted[idx];
+    return `<button class="rc-nav-btn ${S.rcSection===idx?"active":""} ${done?"done":""}" data-action="rc-nav-${idx}">
+      <span class="rc-nav-num">${done?"✓":s.n}</span>
+      ${s.title}
+    </button>`;
+  }).join("");
+
+  const compPct = Math.round((completedCount/11)*100);
+  const navPanel = `<div id="rc-nav">
+    <div class="comp-bar-wrap">
+      <div class="nav-label">COMPLETION</div>
+      <div class="comp-bar-track"><div class="comp-bar-fill" style="width:${compPct}%"></div></div>
+      <div class="comp-bar-lbl">${completedCount}/11 sections complete</div>
+    </div>
+    ${navItems}
+  </div>`;
+
+  const isDone = !!S.rcCompleted[S.rcSection];
+  const sectionContent = renderRCSection(S.rcSection);
+  const nextBtn = S.rcSection<10 ? btn("Next →","btn-ghost btn-sm","rc-next") : "";
+  const markBtn = !isDone ? btn("Mark complete ✓","btn-teal btn-sm","rc-mark-done") : `<span style="font-size:11px;color:var(--green);font-weight:700">✓ Complete</span>`;
+
+  const contentPanel = `<div class="rc-content">
+    <div class="rc-section-head">
+      <div>
+        <div class="rc-section-super">SECTION ${RC_SECTIONS[S.rcSection].n} OF 11</div>
+        <div class="rc-section-title">${RC_SECTIONS[S.rcSection].title}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">${markBtn}${nextBtn}</div>
+    </div>
+    ${sectionContent}
+  </div>`;
+
+  return `${header}<div class="rc-body">${navPanel}${contentPanel}</div>`;
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────────
+function renderModal(){
+  if(!S.modal) return "";
+  const existing = (S.modal && typeof S.modal==="object" && S.modal.id) ? S.modal : null;
+  const f = S.modalForm;
+  const valid = f.name&&f.lga&&f.leadOrg&&f.commissioner;
+
+  const fwSliders=[
+    ["cfir","CFIR average (1–5)",5,"#196BAC"],
+    ["proctor","Proctor average (0–100%)",100,"#003D69"],
+    ["tzs","NSW TZS average (1–5)",5,"#B84D2E"],
+    ["abcd","ABCD average (1–5)",5,"#007573"],
+    ["eric","ERIC completion (%)",100,"#3D6B55"],
+  ].map(([key,label,max,col]) => {
+    const val=parseFloat(f[key]||0);
+    const disp=max===100?`${Math.round(val)}%`:val.toFixed(1);
+    return `<div class="slider-row">
+      <label style="font-size:12px;color:var(--denim);font-weight:600">${label}</label>
+      <input type="range" min="0" max="${max}" step="${max===5?0.1:1}" value="${val}" data-action="mf-${key}" style="accent-color:${col}">
+      <span class="slider-val" style="color:${col}">${disp}</span>
+    </div>`;
+  }).join("");
+
+  const phasePicker=[1,2,3,4,5,6,7,8].map(n=>
+    `<button class="phase-pick-btn ${(f.phase||1)===n?"active":""}" data-action="mf-phase-${n}">${n}</button>`
+  ).join("");
+
+  const lgaOpts=LGA_OPTS.map(o=>`<option value="${o}" ${f.lga===o?"selected":""}>${esc(o)}</option>`).join("");
+  const statusOpts=STATUS_OPTS.map(o=>`<option value="${o}" ${(f.status||"Pre-launch")===o?"selected":""}>${esc(o)}</option>`).join("");
+
+  return `<div class="modal-overlay" id="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-hd">
+        <div class="modal-title">${existing?"Edit prototype":"Register a new prototype"}</div>
+        <div class="modal-sub">Complete all required fields before opening the prototype.</div>
+      </div>
+      <div class="modal-bd">
+        <div class="section-divider" style="color:var(--cobalt);margin-top:0">Prototype details</div>
+        <div class="modal-grid">
+          ${fieldWrap("Prototype name *","",inp(f.name||"","mf-name","e.g. Brookvale Community Hub"))}
+          ${fieldWrap("Local Government Area *","",`<select class="inp" data-action="mf-lga"><option value="">Select LGA…</option>${lgaOpts}</select>`)}
+          ${fieldWrap("Lead organisation *","",inp(f.leadOrg||"","mf-leadOrg","Name of the lead organisation"))}
+          ${fieldWrap("Commissioner name *","",inp(f.commissioner||"","mf-commissioner","Your full name"))}
+          ${fieldWrap("Prototype start date","",`<input class="inp" type="date" value="${esc(f.startDate||"")}" data-action="mf-startDate">`)}
+          ${fieldWrap("Current status","",`<select class="inp" data-action="mf-status">${statusOpts}</select>`)}
+        </div>
+        ${fieldWrap("Current phase (1–8)","",`<div class="phase-picker">${phasePicker}</div>`)}
+        <div class="section-divider" style="color:var(--cobalt)">Opening framework ratings (optional)</div>
+        <p style="font-size:11px;color:var(--slate);margin-bottom:14px">Enter your pre-launch ratings now, or leave at 0 and update from the Implementation Workbook.</p>
+        ${fwSliders}
+        <div style="display:flex;gap:10px;margin-top:24px;padding-top:16px;border-top:1px solid var(--grey);align-items:center">
+          ${btn(existing?"Save changes":"Register prototype","btn-teal","modal-save",valid?"":'disabled')}
+          ${btn("Cancel","btn-ghost","modal-close")}
+          ${!valid?`<span style="font-size:11px;color:var(--coral)">* Required fields must be completed.</span>`:""}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── MAIN RENDER ──────────────────────────────────────────────────────────────
+function render(){
+  let mainContent="";
+  if(S.module==="dashboard")  mainContent=renderDashboard();
+  if(S.module==="logbook")    mainContent=renderLogBook();
+  if(S.module==="reportcard") mainContent=renderReportCard();
+
+  document.getElementById("app").innerHTML = `
+    <div id="topbar">${renderTopbar()}</div>
+    <div id="body">
+      <div id="sidenav" class="${S.navOpen?"":"hidden"}">${renderSidenav()}</div>
+      <div id="main">${mainContent}</div>
+    </div>
+    ${renderModal()}`;
+}
+
+// ─── EVENT HANDLING ───────────────────────────────────────────────────────────
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-action]");
+  if(!el) return;
+  const action = el.dataset.action;
+  handle(action, el, e);
+});
+
+document.addEventListener("input", e => {
+  const el = e.target.closest("[data-action]");
+  if(!el) return;
+  handleInput(el.dataset.action, el);
+});
+
+document.addEventListener("change", e => {
+  const el = e.target.closest("[data-action]");
+  if(!el) return;
+  handleInput(el.dataset.action, el);
+});
+
+function handle(action, el, e){
+  // Navigation
+  if(action==="toggle-nav"){ S.navOpen=!S.navOpen; render(); return; }
+  if(action==="nav-dashboard"){  S.module="dashboard";  render(); return; }
+  if(action==="nav-logbook"){    S.module="logbook";    render(); return; }
+  if(action==="nav-reportcard"){ S.module="reportcard"; if(S.prototypes.length>0&&!S.rcProtoId) S.rcProtoId=S.prototypes[0].id; render(); return; }
+
+  // Dashboard views
+  if(action==="dash-view-portfolio"){ S.dashView="portfolio"; S.dashSelected=null; render(); return; }
+  if(action==="dash-view-heatmap"){   S.dashView="heatmap";   S.dashSelected=null; render(); return; }
+  if(action==="dash-view-alerts"){    S.dashView="alerts";    S.dashSelected=null; render(); return; }
+  if(action==="dash-back"){ S.dashSelected=null; render(); return; }
+
+  // Prototype select
+  if(action.startsWith("dash-select-")){
+    S.dashSelected=action.replace("dash-select-",""); S.dashView="portfolio"; render(); return;
+  }
+
+  // Modal open/close
+  if(action==="open-add-modal"){
+    S.modal="add";
+    S.modalForm={name:"",lga:"",leadOrg:"",commissioner:"",startDate:"",status:"Pre-launch",phase:1,cfir:0,proctor:0,tzs:0,abcd:0,eric:0};
+    render(); return;
+  }
+  if(action.startsWith("open-edit-modal-")){
+    const pid = action.replace("open-edit-modal-","");
+    const p = S.prototypes.find(x=>x.id===pid);
+    if(p){ S.modal=p; S.modalForm={...p}; render(); }
+    return;
+  }
+  if(action==="modal-close"){ S.modal=null; render(); return; }
+  if(action==="modal-overlay" && el.id==="modal-overlay"){ S.modal=null; render(); return; }
+
+  if(action==="modal-save"){
+    const f=S.modalForm;
+    if(!f.name||!f.lga||!f.leadOrg||!f.commissioner) return;
+    const proto={...f, id:f.id||uid()};
+    const existing=S.prototypes.findIndex(p=>p.id===proto.id);
+    if(existing>=0) S.prototypes[existing]=proto;
+    else S.prototypes.push(proto);
+    if(!S.rcProtoId) S.rcProtoId=proto.id;
+    S.modal=null; save(); render(); return;
+  }
+
+  // Phase picker in modal
+  if(action.startsWith("mf-phase-")){
+    S.modalForm.phase=parseInt(action.replace("mf-phase-",""));
+    render(); return;
+  }
+
+  // Log book
+  if(action==="lb-toggle-form"){ S.lbShowForm=!S.lbShowForm; render(); return; }
+  if(action==="lb-show-form"){   S.lbShowForm=true; render(); return; }
+  if(action==="lb-cancel"){      S.lbShowForm=false; render(); return; }
+
+  if(action==="lb-save"){
+    const f=S.lbForm;
+    if(!f.title.trim()||!f.body.trim()||!f.prototype) return;
+    S.entries.unshift({...f, id:uid()});
+    S.lbForm={...S.lbForm, title:"", body:""};
+    S.lbShowForm=false; save(); render(); return;
+  }
+
+  // Framework filter buttons
+  if(action.startsWith("lb-fw-")){
+    S.lbFilterFW=action.replace("lb-fw-",""); render(); return;
+  }
+
+  // RC nav
+  if(action.startsWith("rc-nav-")){ S.rcSection=parseInt(action.replace("rc-nav-","")); render(); return; }
+  if(action==="rc-mark-done"){ S.rcCompleted[S.rcSection]=true; render(); return; }
+  if(action==="rc-next"){ if(S.rcSection<10){ S.rcSection++; render(); } return; }
+
+  // RC recommendation
+  if(action.startsWith("rc-rec-")){
+    const r=action.replace("rc-rec-","");
+    if(!S.rcData.decisions) S.rcData.decisions={};
+    S.rcData.decisions.recommendation=r; render(); return;
+  }
+}
+
+function handleInput(action, el){
+  const val = el.type==="checkbox" ? el.checked : el.value;
+
+  // Modal form fields
+  if(action.startsWith("mf-")&&!action.startsWith("mf-phase-")){
+    const key=action.replace("mf-","");
+    const numeric=["cfir","proctor","tzs","abcd","eric"];
+    S.modalForm[key]=numeric.includes(key)?parseFloat(val)||0:val;
+    if(numeric.includes(key)){
+      // Update slider display without full re-render
+      const row = el.closest(".slider-row");
+      if(row){ const sp=row.querySelector(".slider-val"); if(sp){const max=parseInt(el.max); sp.textContent=max===100?`${Math.round(val)}%`:parseFloat(val).toFixed(1);} }
+    }
+    return;
+  }
+
+  // Log book form
+  const lbMap={
+    "lbf-date":"date","lbf-framework":"framework",
+    "lbf-prototype":"prototype","lbf-title":"title","lbf-body":"body"
+  };
+  if(lbMap[action]){ S.lbForm[lbMap[action]]=val; render(); return; }
+
+  if(action==="lb-search"){   S.lbSearch=val;   render(); return; }
+  if(action==="lb-filter-proto"){ S.lbFilterP=val; render(); return; }
+
+  // RC section data — pattern: rc-sd-{sectionKey}-{fieldKey}
+  if(action.startsWith("rc-sd-")){
+    const parts=action.replace("rc-sd-","").split("-");
+    const sectionKey=parts[0];
+    const fieldKey=parts.slice(1).join("-");
+    if(!S.rcData[sectionKey]) S.rcData[sectionKey]={};
+    // Numeric fields from ranges
+    const numericPrefixes=["d","o","p","a"];
+    const isNum=numericPrefixes.some(pre=>fieldKey.startsWith(pre)&&!isNaN(fieldKey.slice(pre.length)));
+    if(isNum || el.type==="range" || el.type==="number"){
+      S.rcData[sectionKey][fieldKey]=parseFloat(val)||0;
+    } else if(el.type==="checkbox"){
+      S.rcData[sectionKey][fieldKey]=val;
+    } else {
+      S.rcData[sectionKey][fieldKey]=val;
+    }
+    // Partial re-render for sliders to update colour
+    if(el.type==="range"){ render(); }
+    return;
+  }
+
+  // RC prototype select
+  if(action==="rc-proto-select"){ S.rcProtoId=val; S.rcCompleted={}; S.rcData={}; render(); return; }
+}
+
+// ─── BOOT ────────────────────────────────────────────────────────────────────
+load();
+if(S.prototypes.length>0 && !S.rcProtoId) S.rcProtoId=S.prototypes[0].id;
+render();
+</script>
+</body>
+</html>
